@@ -21,3 +21,10 @@
 .g-temp-1 .swiper-container-horizontal > .swiper-pagination-bullets,.g-temp-1 .swiper-pagination-custom,.swiper-pagination-fraction{
     bottom: 26px !important;
 }
+
+.mint-msgbox-input input{
+    height: .6rem;
+    padding: 0;
+    text-indent: 1em;
+    font-size: .32rem;
+}

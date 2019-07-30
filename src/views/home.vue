@@ -1,40 +1,47 @@
 <template>
     <div class="main">
         <div class="g-header">
-            <div class="head-money">
-                <h1>50000</h1>
-                <p>最高可借（元）</p>
+            <div class="head-info">
+                <img :src="info.appLogo" alt="">
+                <p>{{info.appName}}</p>
             </div>
-            <div class="head-opt">
-                <div class="opt-btn">立即提现</div>
-                <div class="opt-btn">低息大额贷</div>
+            <div style="width: 100%; overflow: hidden;margin-top: .5rem;">
+                <div class="head-money">
+                    <p>可贷额度</p>
+                    <p>{{info.loanAmount>=10000?info.loanAmount/10000+'万':info.loanAmount}}-{{info.leastAmount>=10000?info.leastAmount/10000+'万':info.leastAmount+'元'}}</p>
+                </div>
+                <div class="head-opt">
+                    <div class="opt-btn" @click="goMoney">立即提现</div>
+                </div>
+
             </div>
+            
         </div>
-        <div class="g-show">
-            <div class="show-item">
-                <div class="item-logo"></div>
+        <!-- <div class="g-show">
+            <div class="show-item" @click="goTixian(3)">
+                <div class="item-logo item-logo-1"></div>
                 <p>快速下款</p>
             </div>
-            <div class="show-item">
-                <div class="item-logo"></div>
+            <div class="show-item" @click="goTixian(4)">
+                <div class="item-logo item-logo-2"></div>
                 <p>超低利息</p>
             </div>
-            <div class="show-item">
-                <div class="item-logo"></div>
+            <div class="show-item" @click="goTixian(5)">
+                <div class="item-logo item-logo-3"></div>
                 <p>大额分期</p>
             </div>
-            <div class="show-item">
-                <div class="item-logo"></div>
+            <div class="show-item" @click="goTixian(6)">
+                <div class="item-logo item-logo-4"></div>
                 <p>精品推荐</p>
             </div>
-        </div>
+        </div> -->
         <div class="g-goods">
             <div class="good-title">
                 <h1>优选贷款</h1>
-                <span>查看更多</span>
+                <span @click="goMore">查看更多</span>
             </div>
             <div class="good-list" v-if="getAList.length>0">
-                <div class="good-item" v-for="(item,i) in getAList" @click="goPage(item)">
+                <div class="good-item" v-for="(item,i) in getAList" @click="goPage(item)" v-if="i<2">
                     <div class="item-left">
                         <div class="item-title">
                             <img :src="item.appLogo" alt="">
@@ -56,27 +63,28 @@
                 </div>
             </div>
         </div>
-        <div class="g-proxy">代理通道</div>
+        <div class="g-proxy" @click="showInput">代理通道</div>
     </div>
 </template>
 <script>
+import {MessageBox,Toast} from 'mint-ui'
 export default {
     data(){
         return {
             inviteCode: '',
             sceneId: null,
-            getAList: []
+            getAList: [],
+            isShow: false,
+            info: 0
         }
     },
     created(){
-        this.inviteCode = this.$route.query.inviteCode || 'KD868E';
-        this.sceneId = Number(this.$route.query.sceneId) || 2;
         this.$http({
             method: 'GET',
             url: '/open/app/info/list',
             params: {
                 inviteCode: this.inviteCode,
-                sceneId: this.sceneId
+                sceneId: 2
             }
         }).then(res => {
             let data = res.data.retData;
@@ -84,8 +92,19 @@ export default {
                e.appLabel = e.appLabel.split('，')
                this.getAList.push(e)
             });
+        });
+        this.$http({
+            method: 'GET',
+            url: '/open/app/info/list',
+            params: {
+                inviteCode: this.inviteCode,
+                sceneId: 1
+            }
+        }).then(res => {
+            this.info = res.data.retData[0];
         })
     },
+    components:{MessageBox,Toast},
     methods:{
         goPage(item){
             this.$http({
@@ -95,63 +114,216 @@ export default {
                     appCode: item.appCode,
                     inviteCode: this.inviteCode,
                     username: item.username,
-                    sceneId: this.sceneId
+                    sceneId: 2
                 }
             }).then(res=>{
-                if(res.data.retCode == '0000'){
+               if(res.data.retCode == '0000'){
                     window.open(item.appSignupLink,"_blank");
                }
             })
+        },
+        goTixian(i){
+            this.isShow = false;
+            this.$http({
+                method: 'GET',
+                url: '/open/app/info/list',
+                params: {
+                    inviteCode: this.inviteCode,
+                    sceneId: i
+                }
+            }).then(res => {
+                if(res.data.retCode == '00000002'){
+                    Toast('获取应用列表异常');
+                    this.inviteCode = ''
+                    return
+                }
+                if(res.data.retData.length==0){
+                    Toast('暂无数据');
+                    return ;
+                }
+
+                let data = res.data.retData[0];
+                if(res.data.retCode == '0000' && data){
+                    this.$http({
+                        method: 'POST',
+                        url: '/open/flow/out/save',
+                        data:{
+                            appCode: data.appCode,
+                            inviteCode: this.inviteCode,
+                            username: data.username,
+                            sceneId: i
+                        }
+                    }).then(res=>{
+                        if(res.data.retCode == '0000' && res.data.retData.length>0){
+                            window.open(data.appSignupLink,"_blank");
+                        }else{
+                            // Toast('');
+                        }
+                    })
+                }
+            });
+        },
+        showInput(){
+            // this.isShow = true
+            MessageBox.prompt('请输入邀请码').then((val,aciton)=>{
+                this.inviteCode = val.value;
+                this.goTixian(7);
+            }).catch((action)=>{
+                
+            })
+        },
+        goMore(){
+            this.$router.push('/list')
+        },
+        goMoney(){
+            // location.href = 'htpp://'+this.info.appSignupLink
+            window.open(this.info.appSignupLink,"_blank");
         }
     }
 }
 </script>
 
 <style lang="scss" scoped>
+
+.dialog{
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: rgba(0,0,0,.3);
+    .dial-con{
+        width: 4rem;
+        min-height: 2rem;
+        background-color: #fff;
+        border-radius: .07rem;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%,-50%);
+        input{
+            border: 1px solid #5877f6;
+            width: 80%;
+            height: .6rem;
+            text-indent: 1em;
+            display: block;
+            margin: .4rem auto;
+            font-size: .32rem;
+        }
+        .dial-title{
+            width: 100%;
+            border-bottom: 1px solid #ececec;
+            height: .6rem;
+            line-height: .6rem;
+            text-indent: 1em;
+        }
+        .btn{
+            width: 50%;
+            height: .72rem;
+            text-align: center;
+            line-height: .72rem;
+            color: #fff;
+            background-color: #5877f6;
+            border-radius: .03rem;
+            font-size: .28rem;
+            margin: 0 auto .3rem;
+        }
+    }
+}
+:-ms-input-placeholder{
+    color: #5877f6;
+    opacity: .5;
+}
+::placeholder{
+    color: #5877f6;
+    opacity: .5;
+}
+:-moz-placeholder{
+    color: #5877f6;
+    opacity: .5;
+}
+::-webkit-input-placeholder{
+    color: #5877f6;
+    opacity: .5;
+}
 .main{
     width: 100%;
     overflow: hidden;
 }
 .g-header{
     width: 6.9rem;
-    height: 2.54rem;
-    border: 2px solid #5877f6;
+    height: 2.8rem;
     box-sizing: border-box;
     margin: .4rem auto;
+    background: url('./../../static/img/bk1@2x.png') no-repeat;
+    background-size: 6.9rem;
+    overflow: hidden;
     h1{
-        font-size: .48rem;
-        color: #333;
+        font-size: .4rem;
+        color: #fff;
         font-weight: 500;
-        text-align: center;
-        margin-top: .35rem;
+        margin-top: .28rem;
+        text-indent: .5rem;
     }
     p{
         font-size: .26rem;
-        color: #333;
-        text-align: center;
+        color: #fff;
         margin-top: .1rem;
+        text-indent: .5rem;
     }
     .head-opt{
-        width: 100%;
+       float: right;
         margin-top: .2rem;
+        margin-right: .5rem;
         .opt-btn{
-            width: 2.3rem;
+            width: 1.76rem;
             height: .56rem;
             line-height: .56rem;
             text-align: center;
-            color: #fff;
-            background-color: #5877f6;
+            color: #FFB118;
             float: left;
             margin-left: .54rem;
-            box-shadow: 0 4px 7px #bad9f0;
             font-size: .28rem;
-            &:nth-last-of-type(1){
-                float: right;
-                margin-right: .54rem;
-            }
+            background-color: #fff;
+            border-radius: .28rem;
+            margin-top: .2rem
+        }
+    }
+    .head-info{
+        width: 100%;
+        overflow: hidden;
+        margin-top: .36rem;
+        img{
+            width: .4rem;
+            height: .4rem;
+            margin-left: .5rem;
+            float: left;
+        }
+        p{
+            color: #fff;
+            font-size: .28rem;
+            float: left;
+            text-indent: 0;
+            margin-left: .12rem;
+            line-height: .36rem;
+            margin-top: 0;
+            border-left: 1px solid #fff;
+            text-indent: .1rem;
+            margin-top: .02rem;
         }
     }
 }
+
+.head-money{
+    float: left;
+    p{
+        &:nth-last-of-type(1){
+            font-size: .4rem;
+            margin-top: .18rem;
+        }
+    }
+}
+
 
 .g-show{
     width: 6.9rem;
@@ -169,8 +341,24 @@ export default {
             width: .8rem;
             height: .8rem;
             border-radius: 50%;
-            background-color: #5877f6;
+            // background-color: #5877f6;
             margin: 0 auto;
+        }
+        .item-logo-1{
+            background: url('./../../static/img/logo_20190729133851.png') no-repeat;
+            background-size: .8rem;
+        }
+        .item-logo-2{
+            background: url('./../../static/img/logo_20190729133818.png') no-repeat;
+             background-size: .8rem;
+        }
+        .item-logo-3{
+            background: url('./../../static/img/logo_20190729133902.png') no-repeat;
+             background-size: .8rem;
+        }
+         .item-logo-4{
+            background: url('./../../static/img/logo_20190729133910.png') no-repeat;
+            background-size: .8rem;
         }
         p{
             margin-top: .2rem;
@@ -188,11 +376,13 @@ export default {
         width: 6.9rem;
         margin: 0 auto;
         overflow: hidden;
+        // border-bottom: 1px solid #E8E8E8;
+        // padding-bottom: .24rem;
         h1{
             float: left;
-            font-size: .28rem;
+            font-size: .32rem;
             color: #333;
-            line-height: .32rem;
+            // line-height: .32rem;
         }
         span{
             float: right;
@@ -213,11 +403,9 @@ export default {
         width: 6.9rem;
         margin: 0 auto;
         overflow: hidden;
-        border-bottom: 1px solid #cdcdcd;
-        margin-top: .7rem;
-        &:nth-last-of-type(1){
-            border-bottom: none;
-        }
+        border-bottom: 1px solid #E8E8E8;
+        margin-top: .4rem;
+       
         .item-left{
             float: left;
             width: 4.88rem;
@@ -231,65 +419,83 @@ export default {
         width: 100%;
         overflow: hidden;
         img{
-            width: .77rem;
+            width: .46rem;
             float: left;
         }
         h2{
             float: left;
-            line-height: .77rem;
+            line-height: .46rem;
             margin-left: .16rem;
-            font-size: .32rem;
+            font-size: .36rem;
             font-weight: 500;
-            color: #333;
+            color: #4E5055;
         }
         span{
             float: left;
-            line-height: .77rem;
+            line-height: .46rem;
             margin-left: .16rem;
             font-size: .24rem;
-            color: #d5931b;
+            color: #FFA300;
+            background:rgba(255,196,91,0.09);
+            padding: 0 .05rem;
         }
     }
     .item-info{
         width: 100%;
         overflow: hidden;
-        font-size: .28rem;
+        font-size: .24rem;
         line-height: .4rem;
+        margin-top: .3rem;
+        color: #A8A9AB;
         .item-info-left{
             float: left;
             margin: .1rem .3rem .1rem 0;
+            p{
+                &:nth-of-type(1){
+                    font-size: .4rem;
+                    color: #FE4949;
+                    font-size: .4rem;
+                    margin-bottom: .1rem;
+                }
+            }
         }
         .item-info-right{
             float: left;
-             margin: .1rem 0;
+            margin: .1rem 0;
+             p{
+                &:nth-of-type(1){
+                    
+                    margin-bottom: .1rem;
+                }
+            }
         }
     }
 }
 
 .item-btn{
-    width: 1.94rem;
-    height: .72rem;
+    width: 1.76rem;
+    height: .6rem;
     text-align: center;
-    line-height: .72rem;
-    color: #fff;
-    background-color: #5877f6;
+    line-height: .6rem;
+    background: url('./../../static/img/anniu2@2x.png') no-repeat;
+    background-size: 1.76rem .6rem;
     float: right;
-    border-radius: .03rem;
     font-size: .28rem;
     margin-top: .45rem;
-    box-shadow: 0 4px 7px #bad9f0;
+    color: #fff;
 }
 .g-proxy{
-    width: 6.9rem;
-    height: .54rem;
-    border: 1px solid #cdcdcd;
-    border-radius: .03rem;
-    color: #333;
-    font-size: .28rem;
+    width: 7.5rem;
+    height: .92rem;
+    background: url('./../../static/img/RectangleCopy@2x.png') no-repeat;
+    background-size: 7.5rem;
+    color: #fff;
+    font-size: .36rem;
     text-align: center;
-    line-height: .54rem;
-    margin: .5rem auto .3rem;
-   
+    line-height: .92rem;
+   position: fixed;
+   bottom: 0;
+   left: 0;
 }
 </style>
 
