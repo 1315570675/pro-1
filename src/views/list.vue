@@ -58,7 +58,7 @@ export default {
                 }
             }).then(res=>{
                if(res.data.retCode == '0000'){
-                    window.open(item.appSignupLink,"_blank");
+                    window.location.href = item.appSignupLink 
                }
             })
         },

@@ -118,7 +118,7 @@ export default {
                 }
             }).then(res=>{
                if(res.data.retCode == '0000'){
-                    window.open(item.appSignupLink,"_blank");
+                    window.location.href = item.appSignupLink
                }
             })
         },
@@ -155,9 +155,8 @@ export default {
                         }
                     }).then(res=>{
                         if(res.data.retCode == '0000' && res.data.retData.length>0){
-                            window.open(data.appSignupLink,"_blank");
+                            window.location.href = data.appSignupLink
                         }else{
-                            // Toast('');
                         }
                     })
                 }
@@ -176,8 +175,7 @@ export default {
             this.$router.push('/list')
         },
         goMoney(){
-            // location.href = 'htpp://'+this.info.appSignupLink
-            window.open(this.info.appSignupLink,"_blank");
+            window.location.href = this.info.appSignupLink
         }
     }
 }
