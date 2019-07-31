@@ -26,16 +26,18 @@
 export default {
     data(){
         return {
-            getAList: []
+            getAList: [],
+            sceneId: null
         }
     },
     created(){
+        this.sceneId = this.$route.query.sceneId;
         this.$http({
             method: 'GET',
             url: '/open/app/info/list',
             params: {
                 inviteCode: this.inviteCode,
-                sceneId: 2
+                sceneId: this.sceneId
             }
         }).then(res => {
             let data = res.data.retData;

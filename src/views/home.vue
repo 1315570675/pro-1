@@ -41,7 +41,7 @@
                 <span @click="goMore">查看更多</span>
             </div>
             <div class="good-list" v-if="getAList.length>0">
-                <div class="good-item" v-for="(item,i) in getAList" @click="goPage(item)" v-if="i<2">
+                <div class="good-item" v-for="(item,i) in getAList" @click="goPage(item)" v-if="i<5">
                     <div class="item-left">
                         <div class="item-title">
                             <img :src="item.appLogo" alt="">
@@ -118,7 +118,7 @@ export default {
                 }
             }).then(res=>{
                if(res.data.retCode == '0000'){
-                    window.open(item.appSignupLink,"_blank");
+                    window.location.href = item.appSignupLink
                }
             })
         },
@@ -133,7 +133,7 @@ export default {
                 }
             }).then(res => {
                 if(res.data.retCode == '00000002'){
-                    Toast('获取应用列表异常');
+                    Toast('邀请码错误');
                     this.inviteCode = ''
                     return
                 }
@@ -141,7 +141,10 @@ export default {
                     Toast('暂无数据');
                     return ;
                 }
-
+                if(i == 7){
+                    this.$router.push({path: '/list',query:{sceneId: 7}});
+                    return
+                }
                 let data = res.data.retData[0];
                 if(res.data.retCode == '0000' && data){
                     this.$http({
@@ -155,7 +158,7 @@ export default {
                         }
                     }).then(res=>{
                         if(res.data.retCode == '0000' && res.data.retData.length>0){
-                            window.open(data.appSignupLink,"_blank");
+                            window.location.href = data.appSignupLink
                         }else{
                             // Toast('');
                         }
@@ -173,11 +176,11 @@ export default {
             })
         },
         goMore(){
-            this.$router.push('/list')
+            this.$router.push({path:'/list',query:{sceneId: 2}})
         },
         goMoney(){
-            // location.href = 'htpp://'+this.info.appSignupLink
-            window.open(this.info.appSignupLink,"_blank");
+            location.href = this.info.appSignupLink
+            // window.open(this.info.appSignupLink,"_blank");
         }
     }
 }
@@ -372,6 +375,7 @@ export default {
     width: 100%;
     overflow: hidden;
     margin-top: .6rem;
+    margin-bottom: .92rem;
     .good-title{
         width: 6.9rem;
         margin: 0 auto;
@@ -477,12 +481,14 @@ export default {
     height: .6rem;
     text-align: center;
     line-height: .6rem;
-    background: url('./../../static/img/anniu2@2x.png') no-repeat;
+    // padding: .16rem 0;
+    background: url('./../../static/img/anniu2@2x.png') no-repeat center top;
     background-size: 1.76rem .6rem;
     float: right;
     font-size: .28rem;
     margin-top: .45rem;
     color: #fff;
+    // background-color: red
 }
 .g-proxy{
     width: 7.5rem;
